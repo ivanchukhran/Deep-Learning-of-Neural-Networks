@@ -4,9 +4,7 @@ from torch import nn
 class TinyRNN(nn.Module):
     def __init__(self, input_size: int, hidden_size: int, output_size: int, num_layers: int = 1):
         super(TinyRNN, self).__init__()
-        self.input_size = input_size
         self.hidden_size = hidden_size
-        self.output_size = output_size
         self.num_layers = num_layers
 
         self.layers = nn.ModuleList()
