@@ -61,9 +61,9 @@ skip-magic-trailing-comma = true
 
 [tool.pyright]
 exclude = [
-    ".venv"
+    ".venv",
     "**/node_modules",
     "**/__pycache__",
     "src/experimental",
-    "src/typestubs"
+    "src/typestubs",
 ]
