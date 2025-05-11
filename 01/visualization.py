@@ -38,7 +38,9 @@ plt.rcParams["font.size"] = 12
 
 
 # Function to create a training-testing curve plot
-def plot_train_test_curves(data, title, xlabel="Epochs", ylabel="Loss/Accuracy", legend_loc="best"):
+def plot_train_test_curves(
+    data, title, xlabel="Epochs", ylabel="Loss/Accuracy", legend_loc="best"
+):
     epochs = range(1, len(data[list(data.keys())[0]]["train_loss"]) + 1)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
@@ -47,13 +49,39 @@ def plot_train_test_curves(data, title, xlabel="Epochs", ylabel="Loss/Accuracy",
 
     # Plot loss
     for i, (config, metrics) in enumerate(data.items()):
-        ax1.plot(epochs, metrics["train_loss"], "o-", color=colors[i], label=f"{config} (Train)")
-        ax1.plot(epochs, metrics["test_loss"], "s--", color=colors[i], alpha=0.7, label=f"{config} (Test)")
+        ax1.plot(
+            epochs,
+            metrics["train_loss"],
+            "o-",
+            color=colors[i],
+            label=f"{config} (Train)",
+        )
+        ax1.plot(
+            epochs,
+            metrics["test_loss"],
+            "s--",
+            color=colors[i],
+            alpha=0.7,
+            label=f"{config} (Test)",
+        )
 
     # Plot accuracy
     for i, (config, metrics) in enumerate(data.items()):
-        ax2.plot(epochs, metrics["train_accuracy"], "o-", color=colors[i], label=f"{config} (Train)")
-        ax2.plot(epochs, metrics["test_accuracy"], "s--", color=colors[i], alpha=0.7, label=f"{config} (Test)")
+        ax2.plot(
+            epochs,
+            metrics["train_accuracy"],
+            "o-",
+            color=colors[i],
+            label=f"{config} (Train)",
+        )
+        ax2.plot(
+            epochs,
+            metrics["test_accuracy"],
+            "s--",
+            color=colors[i],
+            alpha=0.7,
+            label=f"{config} (Test)",
+        )
 
     ax1.set_title(f"{title} - Loss")
     ax1.set_xlabel(xlabel)
@@ -85,7 +113,9 @@ neurons_fig = plot_train_test_curves(neurons_data, "Effect of Number of Neurons"
 plt.savefig(os.path.join(result_img_dir, "01_neurons_comparison.png"))
 
 # 3. Activation Functions Experiment
-activation_fig = plot_train_test_curves(activation_data, "Effect of Activation Functions")
+activation_fig = plot_train_test_curves(
+    activation_data, "Effect of Activation Functions"
+)
 plt.savefig(os.path.join(result_img_dir, "02_activation_comparison.png"))
 
 # 4. Mini-batch Size Experiment
@@ -122,12 +152,22 @@ def plot_early_stopping():
     min_idx = np.argmin(val_losses)
 
     # Mark the potential early stopping point
-    ax1.axvline(x=min_idx + 1, color="r", linestyle="--", label=f"Potential Early Stop (Epoch {min_idx + 1})")
+    ax1.axvline(
+        x=min_idx + 1,
+        color="r",
+        linestyle="--",
+        label=f"Potential Early Stop (Epoch {min_idx + 1})",
+    )
 
     # Plot accuracy
     ax2.plot(epochs, data["train_accuracy"], "o-", label="Train Accuracy")
     ax2.plot(epochs, data["test_accuracy"], "s-", label="Validation Accuracy")
-    ax2.axvline(x=min_idx + 1, color="r", linestyle="--", label=f"Potential Early Stop (Epoch {min_idx + 1})")
+    ax2.axvline(
+        x=min_idx + 1,
+        color="r",
+        linestyle="--",
+        label=f"Potential Early Stop (Epoch {min_idx + 1})",
+    )
 
     ax1.set_title("Loss with Early Stopping Analysis")
     ax1.set_xlabel("Epochs")
@@ -178,13 +218,45 @@ plt.figure(figsize=(10, 8))
 epochs = range(1, 11)  # Assuming all have 10 epochs
 
 # Plot test accuracies of the best configurations
-plt.plot(epochs, best_layer_metrics["test_accuracy"], "o-", label=f"Best Layers: {best_layer}")
-plt.plot(epochs, best_neuron_metrics["test_accuracy"], "s-", label=f"Best Neurons: {best_neuron}")
-plt.plot(epochs, best_activation_metrics["test_accuracy"], "^-", label=f"Best Activation: {best_activation}")
-plt.plot(epochs, best_batch_metrics["test_accuracy"], "d-", label=f"Best Batch Size: {best_batch}")
-plt.plot(epochs, best_dropout_metrics["test_accuracy"], "p-", label=f"Best Dropout: {best_dropout}")
-plt.plot(epochs, best_l2_metrics["test_accuracy"], "h-", label=f"Best L2 Reg: {best_l2}")
-plt.plot(epochs, best_optimizer_metrics["test_accuracy"], "*-", label=f"Best Optimizer: {best_optimizer}")
+plt.plot(
+    epochs,
+    best_layer_metrics["test_accuracy"],
+    "o-",
+    label=f"Best Layers: {best_layer}",
+)
+plt.plot(
+    epochs,
+    best_neuron_metrics["test_accuracy"],
+    "s-",
+    label=f"Best Neurons: {best_neuron}",
+)
+plt.plot(
+    epochs,
+    best_activation_metrics["test_accuracy"],
+    "^-",
+    label=f"Best Activation: {best_activation}",
+)
+plt.plot(
+    epochs,
+    best_batch_metrics["test_accuracy"],
+    "d-",
+    label=f"Best Batch Size: {best_batch}",
+)
+plt.plot(
+    epochs,
+    best_dropout_metrics["test_accuracy"],
+    "p-",
+    label=f"Best Dropout: {best_dropout}",
+)
+plt.plot(
+    epochs, best_l2_metrics["test_accuracy"], "h-", label=f"Best L2 Reg: {best_l2}"
+)
+plt.plot(
+    epochs,
+    best_optimizer_metrics["test_accuracy"],
+    "*-",
+    label=f"Best Optimizer: {best_optimizer}",
+)
 
 plt.title("Comparison of Best Configurations (Test Accuracy)")
 plt.xlabel("Epochs")
@@ -205,7 +277,15 @@ summary_data = {
         "Best L2 Regularization",
         "Best Optimizer",
     ],
-    "Best Value": [best_layer, best_neuron, best_activation, best_batch, best_dropout, best_l2, best_optimizer],
+    "Best Value": [
+        best_layer,
+        best_neuron,
+        best_activation,
+        best_batch,
+        best_dropout,
+        best_l2,
+        best_optimizer,
+    ],
     "Final Test Accuracy": [
         best_layer_metrics["test_accuracy"][-1],
         best_neuron_metrics["test_accuracy"][-1],

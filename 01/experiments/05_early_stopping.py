@@ -31,7 +31,10 @@ def main():
         optimizer = Adam(model.parameters(), lr=3e-4)
 
         train_dataset, test_dataset = get_dataset(dataset_path="/home/ivan/datasets")
-        train_loader, test_loader = (DataLoader(train_dataset, batch_size=batch_size), DataLoader(test_dataset, batch_size))
+        train_loader, test_loader = (
+            DataLoader(train_dataset, batch_size=batch_size),
+            DataLoader(test_dataset, batch_size),
+        )
 
         model_stats = train(
             model=model,

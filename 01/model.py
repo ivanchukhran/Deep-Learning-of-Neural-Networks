@@ -1,7 +1,9 @@
 from torch import nn
 
 
-def build_model(n_layers: int, n_neurons: int, activation: nn.Module, dropout: float | None = None) -> nn.Module:
+def build_model(
+    n_layers: int, n_neurons: int, activation: nn.Module, dropout: float | None = None
+) -> nn.Module:
     model = nn.ModuleList()
     input_dim = 28 * 28  # flattened 28x28 images
     output_dim = 10  # 10 classes

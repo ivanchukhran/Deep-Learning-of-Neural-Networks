@@ -3,12 +3,22 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import v2
 
-transform = v2.Compose([v2.ToImage(), v2.ToDtype(torch.float32, scale=True), v2.Normalize(mean=(0.5,), std=(0.5,))])
+transform = v2.Compose(
+    [
+        v2.ToImage(),
+        v2.ToDtype(torch.float32, scale=True),
+        v2.Normalize(mean=(0.5,), std=(0.5,)),
+    ]
+)
 
 
 def get_dataset(dataset_path: str, download: bool = False):
-    train = datasets.MNIST(root=dataset_path, train=True, download=download, transform=transform)
-    test = datasets.MNIST(root=dataset_path, train=False, download=download, transform=transform)
+    train = datasets.MNIST(
+        root=dataset_path, train=True, download=download, transform=transform
+    )
+    test = datasets.MNIST(
+        root=dataset_path, train=False, download=download, transform=transform
+    )
     return train, test
 
 

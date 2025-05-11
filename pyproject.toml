@@ -10,9 +10,60 @@ dependencies = [
     "matplotlib-stubs>=0.2.0",
     "nltk>=3.9.1",
     "pyqt6>=6.9.0",
+    "pyright>=1.1.400",
+    "ruff>=0.11.9",
     "scikit-learn>=1.6.1",
     "seaborn>=0.13.2",
     "torch>=2.6.0",
     "torchvision>=0.21.0",
     "tqdm>=4.67.1",
+]
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+line-length = 88
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = true
+
+
+[tool.pyright]
+exclude = [
+    ".venv"
+    "**/node_modules",
+    "**/__pycache__",
+    "src/experimental",
+    "src/typestubs"
 ]

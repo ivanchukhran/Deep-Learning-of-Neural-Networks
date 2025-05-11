@@ -63,7 +63,69 @@ class TinyRNN(nn.Module):
 
 
 class TinyLSTM(nn.Module):
-    pass
+	def __init__(
+		self, input_size: int, hidden_size: int, output_size: int, num_layers: int = 1
+	):
+		super(TinyLSTM, self).__init__()
+		self.hidden_size = hidden_size
+		self.num_layers = num_layers
+
+		self.layers = nn.ModuleList()
+
+		first_layer = nn.ParameterDict(
+			{
+				# Input gate parameters
+				"W_xi": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
+				"W_hi": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+				"b_i": nn.Parameter(torch.zeros(hidden_size)),
+				# Forget gate parameters
+				"W_xf": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
+				"W_hf": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+				"b_f": nn.Parameter(torch.zeros(hidden_size)),
+				# Output gate parameters
+				"W_xo": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
+				"W_ho": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+				"b_o": nn.Parameter(torch.zeros(hidden_size)),
+				# Cell state candidate parameters
+				"W_xc": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
+				"W_hc": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+				"b_c": nn.Parameter(torch.zeros(hidden_size)),
+			}
+		)
+		self.layers.append(first_layer)
+
+		for _ in range(self.num_layers):
+			layer = nn.ParameterDict(
+				{
+					# Input gate parameters
+					"W_xi": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"W_hi": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"b_i": nn.Parameter(torch.zeros(hidden_size)),
+					# Forget gate parameters
+					"W_xf": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"W_hf": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"b_f": nn.Parameter(torch.zeros(hidden_size)),
+					# Output gate parameters
+					"W_xo": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"W_ho": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"b_o": nn.Parameter(torch.zeros(hidden_size)),
+					# Cell state candidate parameters
+					"W_xc": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"W_hc": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
+					"b_c": nn.Parameter(torch.zeros(hidden_size)),
+				}
+			)
+			self.layers.append(layer)
+
+		self.W_hy = nn.Parameter(torch.randn(hidden_size, output_size) * 0.01)
+		self.b_y = nn.Parameter(torch.zeros(output_size))
+
+	def forward(self, x: torch.Tensor, states: torch.Tensor | None = None):
+		batch_size, seq_len, _ = x.size()
+		if states is None:
+_states = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=x.device)
+			c_states = torch.zeros(self.num_layers, batch_size, self.hidden_size, device=x.device)
+
 
 class TinyGRU(nn.Module):
     pass

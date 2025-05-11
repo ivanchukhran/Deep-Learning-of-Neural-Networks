@@ -15,7 +15,12 @@ def train(
     device: str = "cpu",
     early_stopping: EarlyStopping | None = None,
 ) -> dict:
-    model_stats = {"train_loss": [], "test_loss": [], "train_accuracy": [], "test_accuracy": []}
+    model_stats = {
+        "train_loss": [],
+        "test_loss": [],
+        "train_accuracy": [],
+        "test_accuracy": [],
+    }
 
     for epoch in range(n_epochs):
         model.train()

@@ -33,7 +33,12 @@ def main():
             DataLoader(test_dataset, batch_size=minibatch),
         )
         model_stats = train(
-            model=model, optimizer=optimizer, train_loader=train_loader, test_loader=test_loader, n_epochs=n_epochs, device=device
+            model=model,
+            optimizer=optimizer,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            n_epochs=n_epochs,
+            device=device,
         )
 
         stats[minibatch] = model_stats

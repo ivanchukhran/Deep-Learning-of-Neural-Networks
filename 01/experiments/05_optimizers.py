@@ -29,10 +29,18 @@ def main():
         optimizer = optimizer_(model.parameters(), lr=3e-4)
 
         train_dataset, test_dataset = get_dataset(dataset_path="/home/ivan/datasets")
-        train_loader, test_loader = (DataLoader(train_dataset, batch_size=batch_size), DataLoader(test_dataset, batch_size))
+        train_loader, test_loader = (
+            DataLoader(train_dataset, batch_size=batch_size),
+            DataLoader(test_dataset, batch_size),
+        )
 
         model_stats = train(
-            model=model, optimizer=optimizer, train_loader=train_loader, test_loader=test_loader, n_epochs=n_epochs, device=device
+            model=model,
+            optimizer=optimizer,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            n_epochs=n_epochs,
+            device=device,
         )
 
         stats[optimizer.__class__.__name__] = model_stats
