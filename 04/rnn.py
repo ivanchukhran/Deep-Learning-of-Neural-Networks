@@ -1,16 +1,24 @@
 import torch
-from torch import nn
+from torch import nn, numel
 
 
-class TinyRNN(nn.Module):
+class BaseRecurrent(nn.Module):
+    hidden_size: int
+    num_layers: int = 1
+    layers: nn.ModuleList
+
+    def __init__(self, hidden_size: int, num_layers: int = 1):
+        super(BaseRecurrent, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.layers = nn.ModuleList()
+
+
+class TinyRNN(BaseRecurrent):
     def __init__(
         self, input_size: int, hidden_size: int, output_size: int, num_layers: int = 1
     ):
-        super(TinyRNN, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-
-        self.layers = nn.ModuleList()
+        super(TinyRNN, self).__init__(hidden_size=hidden_size, num_layers=num_layers)
         first_layer = nn.ParameterDict(
             {
                 "W_xh": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
@@ -72,15 +80,11 @@ class TinyRNN(nn.Module):
         return outputs, h_states, h_current
 
 
-class TinyLSTM(nn.Module):
+class TinyLSTM(BaseRecurrent):
     def __init__(
         self, input_size: int, hidden_size: int, output_size: int, num_layers: int = 1
     ):
-        super(TinyLSTM, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-
-        self.layers = nn.ModuleList()
+        super(TinyLSTM, self).__init__(hidden_size=hidden_size, num_layers=num_layers)
 
         first_layer = nn.ParameterDict(
             {
@@ -194,15 +198,11 @@ class TinyLSTM(nn.Module):
         return outputs, (h_seq_stacked, c_seq_stacked), (h_current, c_current)
 
 
-class TinyGRU(nn.Module):
+class TinyGRU(BaseRecurrent):
     def __init__(
         self, input_size: int, hidden_size: int, output_size: int, num_layers: int = 1
     ):
-        super(TinyGRU, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-
-        self.layers = nn.ModuleList()
+        super(TinyGRU, self).__init__(hidden_size=hidden_size, num_layers=num_layers)
 
         first_layer = nn.ParameterDict(
             {
@@ -264,19 +264,19 @@ class TinyGRU(nn.Module):
                 layer_input = x_t if layer_idx == 0 else h_current[layer_idx - 1]
                 h_prev_layer = h_current[layer_idx]
                 z_t = torch.sigmoid(
-                    layer_input @ layer["W_xz"] # pyright: ignore
-                    + h_prev_layer @ layer["W_hz"] # pyright: ignore
-                    + layer["b_z"] # pyright: ignore
+                    layer_input @ layer["W_xz"]  # pyright: ignore
+                    + h_prev_layer @ layer["W_hz"]  # pyright: ignore
+                    + layer["b_z"]  # pyright: ignore
                 )
                 r_t = torch.sigmoid(
-                    layer_input @ layer["W_xr"] # pyright: ignore
-                    + h_prev_layer @ layer["W_hr"] # pyright: ignore
-                    + layer["b_r"] # pyright: ignore
+                    layer_input @ layer["W_xr"]  # pyright: ignore
+                    + h_prev_layer @ layer["W_hr"]  # pyright: ignore
+                    + layer["b_r"]  # pyright: ignore
                 )
                 h_tilde = torch.tanh(
-                    layer_input @ layer["W_xh"] # pyright: ignore
-                    + (r_t * h_prev_layer) @ layer["W_hh"] # pyright: ignore
-                    + layer["b_h"] # pyright: ignore
+                    layer_input @ layer["W_xh"]  # pyright: ignore
+                    + (r_t * h_prev_layer) @ layer["W_hh"]  # pyright: ignore
+                    + layer["b_h"]  # pyright: ignore
                 )
                 h_current[layer_idx] = (1 - z_t) * h_prev_layer + z_t * h_tilde
 
