@@ -10,3 +10,5 @@ wheels/
 .venv
 
 /docs
+.DS_Store
+**/.ipynb_checkpoints
