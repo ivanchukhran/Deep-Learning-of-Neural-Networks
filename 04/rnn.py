@@ -177,125 +177,87 @@ class TinyLSTM(BaseRecurrent):
         return h_new, c_new
 
 
-# class TinyGRU(BaseRecurrent):
-#     def __init__(
-#         self, input_size: int, hidden_size: int, output_size: int, num_layers: int = 1
-#     ):
-#         super(TinyGRU, self).__init__(hidden_size=hidden_size, num_layers=num_layers)
+class TinyGRU(BaseRecurrent):
+    def __init__(self, input_size: int, hidden_size: int, num_layers: int = 1):
+        super().__init__(
+            input_size=input_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            gate_size=3,
+        )
+        for layer in range(num_layers):
+            layer_input_size = input_size if layer == 0 else hidden_size
+            w_ih = nn.Parameter(
+                torch.rand(layer_input_size, self.gate_size * hidden_size) * 0.1
+            )
+            w_hh = nn.Parameter(
+                torch.rand(hidden_size, self.gate_size * hidden_size) * 0.1
+            )
+            b_ih = nn.Parameter(torch.rand(self.gate_size * hidden_size))
+            b_hh = nn.Parameter(torch.rand(self.gate_size * hidden_size))
 
-#         first_layer = nn.ParameterDict(
-#             {
-#                 "W_xz": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
-#                 "W_hz": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                 "b_z": nn.Parameter(torch.zeros(hidden_size)),
-#                 # Reset gate parameters
-#                 "W_xr": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
-#                 "W_hr": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                 "b_r": nn.Parameter(torch.zeros(hidden_size)),
-#                 # Candidate hidden state parameters
-#                 "W_xh": nn.Parameter(torch.randn(input_size, hidden_size) * 0.01),
-#                 "W_hh": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                 "b_h": nn.Parameter(torch.zeros(hidden_size)),
-#             }
-#         )
+            setattr(self, f"w_ih_{layer}", w_ih)
+            setattr(self, f"w_hh_{layer}", w_hh)
+            setattr(self, f"b_ih_{layer}", b_ih)
+            setattr(self, f"b_hh_{layer}", b_hh)
 
-#         self.layers.append(first_layer)
+    def forward(self, x: torch.Tensor, hx: torch.Tensor | None = None):
+        batch_size, seq_length, _ = x.size()
 
-#         for _ in range(num_layers - 1):
-#             next_layer = nn.ParameterDict(
-#                 {
-#                     "W_xz": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                     "W_hz": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                     "b_z": nn.Parameter(torch.zeros(hidden_size)),
-#                     # Reset gate parameters
-#                     "W_xr": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                     "W_hr": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                     "b_r": nn.Parameter(torch.zeros(hidden_size)),
-#                     # Candidate hidden state parameters
-#                     "W_xh": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                     "W_hh": nn.Parameter(torch.randn(hidden_size, hidden_size) * 0.01),
-#                     "b_h": nn.Parameter(torch.zeros(hidden_size)),
-#                 }
-#             )
-#             self.layers.append(next_layer)
+        if hx is None:
+            h_zeros = torch.zeros(
+                self.num_layers, batch_size, self.hidden_size, device=x.device
+            )
+        else:
+            h_zeros = hx
 
-#             self.W_hy = nn.Parameter(torch.randn(hidden_size, output_size) * 0.01)
-#             self.b_y = nn.Parameter(torch.zeros(output_size))
+        h_layers = torch.unbind(h_zeros, dim=0)
+        outputs = []
 
-#     def forward(self, x: torch.Tensor, h_prev: torch.Tensor | None = None):
-#         batch_size, seq_len, _ = x.size()
-#         device = x.device
-#         if h_prev is None:
-#             h_prev = torch.zeros(
-#                 self.num_layers, batch_size, self.hidden_size, device=device
-#             )
+        for t in range(seq_length):
+            x_t = x[:, t, :]
+            new_h_layers = []
 
-#         h_seq = []
-#         outputs = []
+            for layer in range(self.num_layers):
+                w_ih = getattr(self, f"w_ih_{layer}")
+                w_hh = getattr(self, f"w_hh_{layer}")
+                b_ih = getattr(self, f"b_ih_{layer}")
+                b_hh = getattr(self, f"b_hh_{layer}")
 
-#         h_current = h_prev.clone()
+                h_prev = h_layers[layer]
 
-#         for t in range(self.num_layers):
-#             x_t = x[:, t, :]
+                h_new = self.gru_cell(x_t, h_prev, w_ih, w_hh, b_ih, b_hh)
 
-#             for layer_idx in range(self.num_layers):
-#                 layer = self.layers[layer_idx]
-#                 layer_input = x_t if layer_idx == 0 else h_current[layer_idx - 1]
-#                 h_prev_layer = h_current[layer_idx]
-#                 z_t = torch.sigmoid(
-#                     layer_input @ layer["W_xz"]  # pyright: ignore
-#                     + h_prev_layer @ layer["W_hz"]  # pyright: ignore
-#                     + layer["b_z"]  # pyright: ignore
-#                 )
-#                 r_t = torch.sigmoid(
-#                     layer_input @ layer["W_xr"]  # pyright: ignore
-#                     + h_prev_layer @ layer["W_hr"]  # pyright: ignore
-#                     + layer["b_r"]  # pyright: ignore
-#                 )
-#                 h_tilde = torch.tanh(
-#                     layer_input @ layer["W_xh"]  # pyright: ignore
-#                     + (r_t * h_prev_layer) @ layer["W_hh"]  # pyright: ignore
-#                     + layer["b_h"]  # pyright: ignore
-#                 )
-#                 h_current[layer_idx] = (1 - z_t) * h_prev_layer + z_t * h_tilde
+                new_h_layers.append(h_new)
+                x_t = h_new
 
-#             y_t = h_current[-1] @ self.W_hy + self.b_y
-#             h_seq.append(h_current.clone())
-#             outputs.append(y_t)
+            h_layers = new_h_layers
+            outputs.append(h_layers[-1].unsqueeze(1))
 
-#         outputs = torch.stack(outputs, dim=1)  # (batch_size, seq_len, output_size)
-#         h_seq_stacked = torch.stack(
-#             h_seq, dim=1
-#         )  # (num_layers, batch_size, seq_len, hidden_size)
+        output = torch.cat(outputs, dim=1)
+        final_hidden = torch.stack(h_layers, dim=0)
 
-#         return outputs, h_seq_stacked, h_current
+        return output, final_hidden
 
+    def gru_cell(
+        self,
+        x_t: torch.Tensor,
+        h_prev: torch.Tensor,
+        w_ih: torch.Tensor,
+        w_hh: torch.Tensor,
+        b_ih: torch.Tensor,
+        b_hh: torch.Tensor,
+    ):
+        gi = x_t @ w_ih + b_ih
+        gh = h_prev @ w_hh + b_hh
 
-if __name__ == "__main__":
-    input_size = 3
-    hidden_size = 12
-    output = 10
-    num_layers = 2
-    rnn = nn.RNN(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers)
+        i_r, i_z, i_n = gi.chunk(self.gate_size, 1)
+        h_r, h_z, h_n = gh.chunk(self.gate_size, 1)
 
-    my_rnn = TinyRNN(
-        input_size=input_size, hidden_size=hidden_size, num_layers=num_layers
-    )
+        reset_gate = torch.sigmoid(i_r + h_r)
+        update_gate = torch.sigmoid(i_z + h_z)
 
-    lstm = nn.LSTM(
-        input_size=input_size,
-        hidden_size=hidden_size,
-        num_layers=num_layers,
-        batch_first=True,
-    )
+        new_gate = torch.tanh(i_n + reset_gate * h_n)
+        h_new = (1 - update_gate) * new_gate + update_gate * h_prev
 
-    my_lstm = TinyLSTM(
-        input_size=input_size, hidden_size=hidden_size, num_layers=num_layers
-    )
-
-    x = torch.randn(10, 3, 3)
-    output, temp = lstm(x)
-    my_output, my_temp = my_lstm(x)
-    print(output.shape, my_output.shape)
-    print("lstm", temp[0].shape, temp[1].shape)
-    print("my_lstm", my_temp[0].shape, my_temp[1].shape)
+        return h_new
