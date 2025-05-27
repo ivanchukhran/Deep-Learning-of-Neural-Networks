@@ -51,24 +51,15 @@ class SentimentClassifier(nn.Module):
         # Initialize the appropriate RNN model
         if model_type.lower() == "rnn":
             self.rnn = TinyRNN(
-                input_size=embedding_dim,
-                hidden_size=hidden_dim,
-                output_size=hidden_dim,
-                num_layers=num_layers,
+                input_size=embedding_dim, hidden_size=hidden_dim, num_layers=num_layers
             )
         elif model_type.lower() == "lstm":
             self.rnn = TinyLSTM(
-                input_size=embedding_dim,
-                hidden_size=hidden_dim,
-                output_size=hidden_dim,
-                num_layers=num_layers,
+                input_size=embedding_dim, hidden_size=hidden_dim, num_layers=num_layers
             )
         elif model_type.lower() == "gru":
             self.rnn = TinyGRU(
-                input_size=embedding_dim,
-                hidden_size=hidden_dim,
-                output_size=hidden_dim,
-                num_layers=num_layers,
+                input_size=embedding_dim, hidden_size=hidden_dim, num_layers=num_layers
             )
         else:
             raise ValueError("model_type must be 'rnn', 'lstm', or 'gru'")
@@ -79,20 +70,14 @@ class SentimentClassifier(nn.Module):
         self.num_layers = num_layers
 
     def forward(self, text):
-        # text shape: [batch_size, seq_len]
-
-        # Pass through embedding layer
         embedded = self.embedding(text)  # [batch_size, seq_len, embedding_dim]
 
-        # Pass through RNN
+        output, hidden = self.rnn(embedded)
+        # since lstm is the only model that packs two tensors as the second return value
+        # and we only need the first one in this case
         if self.model_type == "lstm":
-            output, _, (hidden, _) = self.rnn(embedded)
-            # Get last layer's hidden state
-            hidden = hidden[-1] if self.num_layers > 1 else hidden
-        else:  # RNN or GRU
-            output, _, hidden = self.rnn(embedded)
-            # Get last layer's hidden state
-            hidden = hidden[-1] if self.num_layers > 1 else hidden
+            hidden, _ = hidden
+        hidden = hidden[-1] if self.num_layers > 1 else hidden
 
         # Apply dropout and pass through linear layer
         dropped = self.dropout(hidden)
@@ -134,10 +119,7 @@ def train(args):
 
     # Load test dataset
     test_dataset = TwitterSentimentDataset(
-        root=args.data_dir,
-        split="test",
-        max_length=args.max_seq_length,
-        tokenizer=train_dataset.dataset.tokenizer,  # Access the original dataset through .dataset
+        root=args.data_dir, split="test", max_length=args.max_seq_length
     )
 
     print(
@@ -160,9 +142,8 @@ def train(args):
         test_dataset, batch_size=args.batch_size, num_workers=args.num_workers
     )
 
-    # Get vocabulary size and pad index
-    vocab_size = train_dataset.dataset.get_vocab_size()  # Access the original dataset
-    pad_idx = train_dataset.dataset.get_pad_idx()
+    vocab_size = args.vocab_size
+    pad_idx = 0
 
     # Define sentiment classes
     sentiment_classes = ["negative", "neutral", "positive"]
@@ -184,6 +165,7 @@ def train(args):
     model = model.to(device)
 
     # Define loss function and optimizer
+    # criterion = nn.MSELoss()
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
@@ -236,28 +218,22 @@ def train(args):
 
         train_bar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{args.epochs} [Train]")
         for batch in train_bar:
-            # Get batch
+            optimizer.zero_grad()
             if isinstance(batch, list) and len(batch) == 2:
                 texts, labels = batch
             else:
-                # Handle different dataset return types if needed
                 texts, labels = batch
 
             texts, labels = texts.to(device), labels.to(device)
 
-            # Forward pass
-            optimizer.zero_grad()
             outputs = model(texts)
             loss = criterion(outputs, labels)
 
-            # Backward pass
             loss.backward()
 
-            # Gradient clipping
             if args.clip_grad > 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
 
-            # Update weights
             optimizer.step()
 
             # Update metrics
@@ -398,7 +374,7 @@ def train(args):
 
     # Save classification report
     with open(os.path.join(args.output_dir, "classification_report.txt"), "w") as f:
-        f.write(report)
+        f.write(str(report))
 
     # Plot confusion matrix
     cm = confusion_matrix(y_true, y_pred)
@@ -577,7 +553,7 @@ def main():
         "--hidden_dim", type=int, default=256, help="Dimension of hidden states"
     )
     parser.add_argument(
-        "--dropout", type=float, default=0.5, help="Dropout probability"
+        "--dropout", type=float, default=0.1, help="Dropout probability"
     )
 
     # Training parameters
@@ -599,7 +575,7 @@ def main():
     parser.add_argument(
         "--clip_grad",
         type=float,
-        default=1.0,
+        default=0,
         help="Gradient clipping value (0 to disable)",
     )
     parser.add_argument(
@@ -620,19 +596,14 @@ def main():
     parser.add_argument("--device", type=str, default="cpu")
 
     args = parser.parse_args()
+    args.output_dir = os.path.join(
+        args.output_dir, f"{args.model_type}_{args.num_layers}_layers"
+    )
 
     # Train the model
     model, history = train(args)
 
     return model, history
-
-
-if __name__ == "__main__":
-    main()
-
-
-def main():
-    pass
 
 
 if __name__ == "__main__":

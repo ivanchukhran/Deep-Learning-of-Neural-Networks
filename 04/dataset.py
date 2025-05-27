@@ -55,6 +55,12 @@ class TwitterSentimentDataset(Dataset):
     def tokenize(self, text: str) -> List[str]:
         return self.tokenizer.tokenize(text.lower())
 
+    def token_to_index(self, token: str) -> int | None:
+        return self.token2idx.get(token)
+
+    def index_to_token(self, index: int) -> str | None:
+        return self.idx2token.get(index)
+
     def __prepare(self):
         all_tokens = []
         for text in self.data["text"]:
@@ -82,7 +88,7 @@ class TwitterSentimentDataset(Dataset):
         self.labels = []
 
         for _, row in self.data.iterrows():
-            tokens = self.tokenize(row["text"])
+            tokens = self.tokenize(row["text"])  # pyright: ignore
             tokens = tokens[: self.max_length]
 
             token_indices = [
@@ -96,7 +102,7 @@ class TwitterSentimentDataset(Dataset):
             self.tokenized_texts.append(token_indices)
 
             sentiment = row["sentiment"]
-            sentiment_idx = self.sentiment_map.get(sentiment, 1)
+            sentiment_idx = self.sentiment_map.get(sentiment, 1)  # pyright: ignore
             self.labels.append(sentiment_idx)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
